@@ -1,17 +1,63 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
-name: My workflow
-
+name: My automation
 on:
   push:
     branches:
-      - '**'
-
+      - "**"
 jobs:
   build:
     steps:
-      - name: Say hello
-        uses: docker://golang:1.20.3-alpine3.17
+      - uses: cloudbees-io/cbci-run-job@v2
+        name: Build
+        kind: build
+        with:
+          url: https://sda.preview.cb-demos.io/snaqvi-cbdemos/
+          username: snaqvi
+          token: ${{ secrets.SNAQVI_CI_TOKEN }}
+          job-name: Pet%20Store%20Pipeline
+          test-type: Junit
+          test-result-location: testReport
+  scan:
+    steps:
+      - uses: cloudbees-io/sonarqube-sast-scan-code@v1
+        name: Scan
+        kind: scan
+        with:
+          server-url: https://sonarqube.cb-demos.io
+          username: ${{ vars.SNAQVI_SONARQUBE_USER }}
+          password: ${{ secrets.SNAQVI_SONARQUBE_PASSWORD }}
+          language: Java
+      - uses: cloudbees-io/sonarqube-bundled-sast-scan-code@v2
+        name: Scan 2
+        kind: scan
+        with:
+          language: JAVA
+      - uses: cloudbees-io/findsecbugs-sast-scan-code@v1
+        name: Scan with Find Security Bugs
+        kind: scan
+        with:
+          language: LANGUAGE_JAVA
+      - uses: sbatchelder-cba/sonarqube-cba@v0.0.3
+        name: Scan GP
+        with:
+          project-key: jpetstore
+          token: 51ba99f4fe5b6bf551f18c564beef00b8e435a1b
+  TriggerCloudBeesCD:
+    environment: snaqvi-prod
+    steps:
+      - uses: docker://itsthenetwork/alpine-curl:latest
+        kind: deploy
         shell: sh
-        run: |
-          echo "hello world"
+        run: >
+          curl -k -u snaqvi:${{ secrets.SNAQVI_CD_TOKEN }} -X POST
+          "https://sda.preview.cb-demos.io/rest/v1.0/releases?projectName=snaqvi%20Demo&releaseName=AWS%20Release"
+          -H "accept: application/json" -d "{}"
+    needs:
+      - scan
+      - build
+
+
+
+
+
