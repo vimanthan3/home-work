@@ -12,7 +12,7 @@ jobs:
         name: Build
         kind: build
         with:
-          url: https://sda.preview.cb-demos.io/snaqvi-cbdemos/
+          url: hello
           username: snaqvi
           token: ${{ secrets.SNAQVI_CI_TOKEN }}
           job-name: Pet%20Store%20Pipeline
@@ -54,9 +54,7 @@ jobs:
           "https://sda.preview.cb-demos.io/rest/v1.0/releases?projectName=snaqvi%20Demo&releaseName=AWS%20Release"
           -H "accept: application/json" -d "{}"
     needs:
-      - scan
       - build
-
 
 
 
